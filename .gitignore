@@ -1,0 +1,5 @@
+.venv
+.env
+Pipfile.lock
+dev
+data

@@ -1,0 +1,3 @@
+[submodule "jira_bot/chatbot"]
+	path = jira_bot/chatbot
+	url = https://github.com/BMLN/chatbot.git
