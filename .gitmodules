@@ -1,3 +1,6 @@
 [submodule "jira_bot/chatbot"]
 	path = jira_bot/chatbot
 	url = https://github.com/BMLN/chatbot.git
+[submodule "jira_bot/data"]
+	path = jira_bot/data
+	url = https://github.com/BMLN/data.git

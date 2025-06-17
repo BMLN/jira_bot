@@ -1,0 +1,99 @@
+services:
+
+  ollama:
+    image: ollama/ollama
+    environment:
+      - OLLAMA_NO_PRELOAD=1
+    ports:
+      - 11434:11434
+
+  ollama_init:
+    image: curlimages/curl
+    environment:
+      - API_URL=ollama:11434
+      - MODEL_NAME=tinyllama
+    depends_on:
+      ollama:
+        condition: service_completed_successfully
+    restart: no
+    entrypoint: [ "sh", "-c", 'curl -X POST "$${API_URL}"/api/pull -d "{\"model\": \"$${MODEL_NAME}\"}"' ] 
+
+  knowledgebase:
+    image: semitechnologies/weaviate:latest
+    ports:
+      - "711:711"
+    environment:
+      QUERY_DEFAULTS_LIMIT: 25
+      AUTHENTICATION_ANONYMOUS_ACCES_ENABLED: "true"
+      ENABLE_API_BASED_MODULES: "true"
+    network_mode: "host"
+    restart: on-failure:0
+    command:
+      - --port
+      - "711"
+      - --scheme
+      - http
+
+  jira_bot:
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM python:3.13.3
+
+        #dependencies
+        RUN apt-get update
+        RUN pip install git+https://github.com/pypa/pipenv.git@main
+
+        #resources
+        COPY jira_bot /opt/jira_bot
+        COPY Pipfile /opt/jira_bot/Pipfile
+
+        #setup
+        WORKDIR /opt/jira_bot
+        RUN mkdir resources
+
+        RUN pipenv install
+        RUN awk '/^\[packages\]/ {flag=1; next} /^\[/{flag=0} flag && NF && $1 !~ /^#/ {gsub(/ =.*/, "", $1); print $1}' chatbot/Pipfile data/Pipfile | xargs -n1 pipenv install
+
+        
+
+        RUN cat <<'EOF' > init.sh
+        #!/bin/sh
+
+        SKIP_INIT=$${SKIP_INIT:-"false"}
+        DATA_DIR=$${DATA_DIR:-"./resources"}
+
+
+        if [ "$$SKIP_INIT" = "false" ]; then   
+          echo "Started data initialization..."         
+          pipenv run python init.py $$(find $$DATA_DIR -maxdepth 1 -type f -print0 | xargs -0)
+          echo "Finished data initialization!"
+        fi
+        
+        echo "Started bot initialization..."
+        pipenv run python main.py
+        EOF
+
+
+        ENTRYPOINT ["/bin/sh", "init.sh"]
+    environment:
+      SKIP_INIT: "false" #"true"
+    depends_on:
+      - knowledgebase
+      - ollama
+
+
+  # whisper-tts-service:
+  #   image: fedirz/faster-whisper-server:latest-cpu  # or 'latest-cuda'
+  #   ports:
+  #     - "8000:8000"
+  #   volumes:
+  #     - ~/.cache/huggingface:/root/.cache/huggingface  # Optional: cache models to speed up loading
+  #   # deploy:
+  #   #   resources:
+  #   #     reservations:
+  #   #       devices:
+  #   #         - capabilities: [gpu]
+  #   environment:
+  #     - ENABLE_UI=False
+  #   restart: on-failure:0

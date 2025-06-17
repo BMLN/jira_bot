@@ -8,6 +8,13 @@ requests = "*"
 datetime = "*"
 transformers = "*"
 accelerate = "*"
+weaviate-client = "*"
+sentence-transformers = "*"
+bitsandbytes = "*"
+ijson = "*"
+pandas = "*"
+datasets = "*"
+faiss-cpu = "*"
 
 [dev-packages]
 

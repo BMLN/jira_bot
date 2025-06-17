@@ -1,86 +1,81 @@
+from sys import exit
 from os import environ
-from time import sleep
-
-
-from jira_bot.jira_NEW.servicedesk import Jira, JiraServicedesk
-from controller import Controller
-from chatbot import src
 
 
 
 
+from jira.servicedesk import Jira, JiraServicedesk
+from jira.controller import Controller
 
-from logging import getLogger, basicConfig, INFO
 
+from chatbot.src.interfaces.chatbot import Chatbot
+from chatbot.src.instances.knowledgebases import WeaviateKB
+from chatbot.src.instances.vectorizers import OnDemandDPREncoder
+from chatbot.src.instances.matchers import WeaviateMatcher
+from chatbot.src.instances.instructors import OllamaContextInstructor
+from chatbot.src.instances.generators import OllamaGenerator
+
+
+
+
+
+
+
+
+
+from logging import getLogger, basicConfig, INFO as LOG_INFO
 logger = getLogger()
 
 
 
 
-if __name__ == "__main__":
-    basicConfig(level=INFO)
-
-
-    
-    jira = Jira(environ["JIRA_URL"], {"email": environ["JIRA_AUTH_EMAIL"], "api_token": environ["JIRA_AUTH_TOKEN"]})
-    serviceDesk = JiraServicedesk(jira, environ["JIRA_SERVICEDESK"])
-
-    chatbot = None
-    #adddata
-
-
-    controller = Controller(chatbot, serviceDesk)
-    freq = int(environ["BOT_UPDATE_FREQUENCY"])
-
-    while True:
-        try:
-            controller.update()
-            
-        except Exception as e:
-            logger.error(e)
-
-        sleep(freq)
-
-
-
-
-#### new 
-#no class 
-
-from jira_bot.chatbot.cp.interfaces.chatbot import Chatbot
-
-from jira_bot.chatbot.cp.instances.knowledgebases import WeaviateKB
-from jira_bot.chatbot.cp.instances.vectorizers import OnDemandDPREncoder
-#from jira_bot.chatbot.cp.instances.match
-from jira_bot.chatbot.cp.instances.instructors import OllamaInstructor
-from jira_bot.chatbot.cp.instances.generators import OnDemandGenerator
-
-
 
 
 
 if __name__ == "__main__":
-    basicConfig(level=INFO)
+    basicConfig(level=LOG_INFO)
 
-    jira_url = environ.get("JIRA_URL", None)
-    jira_auth_email = environ.get("JIRA_AUTH_EMAIL", None)
-    jira_auth_token = environ.get("JIRA_AUTH_TOKEN", None)
+
+    #configuration
+    configuration = {
+        "jira_url": environ.get("JIRA_URL", None),
+        "jira_auth_email": environ.get("JIRA_AUTH_EMAIL", None),
+        "jira_auth_token": environ.get("JIRA_AUTH_TOKEN", None),
+        
+        "jira_servicedesk": environ.get("JIRA_SERVICEDESK", None),
+
+
+        "chatbot_kb_host": environ.get("CHATBOT_KB_HOST", None),
+        "chatbot_kb_port": environ.get("CHATBOT_KB_PORT", None),
+        "chatbot_kb_collection": environ.get("CHATBOT_KB_COLLECTION", None),
+        
+        "chatbot_encoder_model": environ.get("CHATBOT_ENCODER_MODEL", None),
+        "chatbot_generator_model": environ.get("CHATBOT_GENERATOR_MODEL", None),
+        
+        "chatbot_generator_endpoint": environ.get("CHATBOT_GENERATOR_ENDPOINT", None),
+
+
+        "update_freq": environ.get("UPDATE_FREQ", None)
+    }
+
+    if not all(list(configuration.values())[:-1]):
+        logger.warning(f"didnt provide all variables: Missing { [ str.upper(key) for key, value in list(configuration.items())[:-1] if not value ]}")
+        exit(1)
     
-    jira_servicedesk = environ.get("JIRA_SERVICEDESK", None)
-
-    
 
 
+
+    #setup
     #jira
-    jira = Jira(jira_url, {"email": jira_auth_email, "api_token": jira_auth_token})
-    servicedesk = JiraServicedesk(jira, jira_servicedesk)
+    jira = Jira(configuration["jira_url"], {"email": configuration["jira_auth_email"], "api_token": configuration["jira_auth_token"]})
+    servicedesk = JiraServicedesk(jira, configuration["jira_servicedesk"])
     
     #chatbot
-    knowledgebase = None
-    vectorizer = OnDemandDPREncoder("")
-    matcher = None
-    instructor = None
-    generator = None
+    knowledgebase = WeaviateKB(configuration["chatbot_kb_host"], configuration["chatbot_kb_port"], configuration["chatbot_kb_collection"])
+    vectorizer = OnDemandDPREncoder(configuration["chatbot_encoder_model"])
+    matcher = WeaviateMatcher()
+    instructor = OllamaContextInstructor()
+    generator = OllamaGenerator(configuration["chatbot_generator_endpoint"], configuration["chatbot_generator_model"])
 
     chatbot = Chatbot(
         knowledgebase,
@@ -90,39 +85,14 @@ if __name__ == "__main__":
         generator
     )
 
-    Controller(chatbot, servicedesk).start()
-    
-
-
-    controller = Controller(chatbot, serviceDesk)
-    freq = int(environ["BOT_UPDATE_FREQUENCY"])
-
-    while True:
-        try:
-            controller.update()
-            
-        except Exception as e:
-            logger.error(e)
-
-        sleep(freq)
-    
 
 
 
-
-class JiraBot(Chatbot):
-
-    def __init__(self, weavite_cfg, dpr_model_name, generator_model_name):
-        assert "host" in weavite_cfg and "port" in weavite_cfg and "collection" in weavite_cfg
-
-        
-        kb = WeaviateKB(**weavite_cfg)
-        vt = OnDemandDPREncoder(dpr_model_name)
-        
-        it = OllamaInstructor() #TODO: wrong one here
-        gt = OnDemandGenerator(generator_model_name)
-
-        super().__init__(kb, vt, matcher, it, gt)
-
+    #runwithit
+    Controller(
+        servicedesk, 
+        chatbot,
+        **({"update_freq": configuration["update_freq"]} if configuration["update_freq"] else {})
+    ).start()
 
 
