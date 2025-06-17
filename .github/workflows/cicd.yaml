@@ -10,8 +10,8 @@ on:
 jobs:
   build-publish-jirabot:
     permissions:
-      packages: write
       contents: read
+      packages: write
 
     runs-on: ubuntu-latest
 
