@@ -31,7 +31,7 @@ jobs:
 
       - name: "Build jira_bot"
         run: |
-          docker compose build -t ghcr.io/bmln/jira_bot jira_bot
+          docker compose build jira_bot
 
       - name: "Publish jira_bot"
         run: |
