@@ -8,9 +8,10 @@ on:
 
   
 jobs:
-  build-publish-chatbot:
+  build-publish-jirabot:
     permissions:
       packages: write
+      contents: read
 
     runs-on: ubuntu-latest
 
