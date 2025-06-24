@@ -68,7 +68,7 @@ for arg in sys.argv[1:]:
                 break
 
             conn.create(
-                id=chunk["id"] if "id" in chunk else None,
+                id=chunk["id"].apply(literal_eval) if "id" in chunk else None,
                 embedding=chunk["embedding"].apply(literal_eval),
                 data=chunk["data"].apply(literal_eval)
             )
@@ -77,9 +77,8 @@ for arg in sys.argv[1:]:
 
 
     except Exception as e:
-        logger.warning(f"could't read {arg}")
+        logger.warning(f"could't read {arg}: {e}")
         succesful_reads.append(False)
-
 
 
 if sum(succesful_reads) / len(succesful_reads) < error_threshold:

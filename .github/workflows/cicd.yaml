@@ -22,6 +22,13 @@ jobs:
           submodules: recursive
           token: ${{ secrets.GH_PAT }}
           
+      - name: "dev checkout"
+        run: |
+          cd jira_bot/data
+          git fetch
+          git checkout dev
+          git pull origin dev
+
       - name: "Login to GitHub Container Registry"
         uses: docker/login-action@v1
         with:
