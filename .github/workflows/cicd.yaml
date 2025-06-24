@@ -25,7 +25,7 @@ jobs:
       - name: "dev checkout"
         run: |
           cd jira_bot/data
-          git fetch
+          git fetch origin dev:dev
           git checkout dev
           git pull origin dev
 
