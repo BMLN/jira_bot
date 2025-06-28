@@ -6,15 +6,15 @@ name = "pypi"
 [packages]
 requests = "*"
 datetime = "*"
-transformers = "*"
 accelerate = "*"
 weaviate-client = "*"
-sentence-transformers = "*"
 bitsandbytes = "*"
 ijson = "*"
 pandas = "*"
 datasets = "*"
 faiss-cpu = "*"
+transformers = "*"
+sentence-transformers = "*"
 
 [dev-packages]
 

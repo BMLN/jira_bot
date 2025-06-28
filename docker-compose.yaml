@@ -87,19 +87,3 @@ services:
     depends_on:
       - knowledgebase
       - ollama
-
-
-  # whisper-tts-service:
-  #   image: fedirz/faster-whisper-server:latest-cpu  # or 'latest-cuda'
-  #   ports:
-  #     - "8000:8000"
-  #   volumes:
-  #     - ~/.cache/huggingface:/root/.cache/huggingface  # Optional: cache models to speed up loading
-  #   # deploy:
-  #   #   resources:
-  #   #     reservations:
-  #   #       devices:
-  #   #         - capabilities: [gpu]
-  #   environment:
-  #     - ENABLE_UI=False
-  #   restart: on-failure:0
