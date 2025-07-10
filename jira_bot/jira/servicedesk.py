@@ -1,6 +1,8 @@
 import requests
 from requests.auth import HTTPBasicAuth
 
+import re
+from email_reply_parser import EmailReplyParser
 
 
 
@@ -33,6 +35,47 @@ def unnest_items(d, keys=None):
 
     
     return result
+
+
+
+def strip_jira_wiki_markup(text):
+    # Remove code/pre/code blocks
+    text = re.sub(r'\{code.*?\}(.*?)\{code\}', r'\1', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'\{noformat\}(.*?)\{noformat\}', r'\1', text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r'\{quote\}', '', text, flags=re.IGNORECASE)
+    
+    # Remove color, panel, etc.
+    text = re.sub(r'\{color:[^}]+\}', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'\{panel:[^}]+\}', '', text, flags=re.IGNORECASE)
+    text = re.sub(r'\{panel\}', '', text, flags=re.IGNORECASE)
+
+    # Remove headings (# or h1. style)
+    text = re.sub(r'^h[1-6]\.\s*', '', text, flags=re.MULTILINE)
+
+    # Remove bold (*bold*), italic (_italic_)
+    text = re.sub(r'\*(.*?)\*', r'\1', text)
+    text = re.sub(r'_(.*?)_', r'\1', text)
+
+    # Remove lists (- or * at line start)
+    text = re.sub(r'^[\*\-]\s*', '', text, flags=re.MULTILINE)
+
+    # Remove link markup [text|url]
+    text = re.sub(r'\[([^\|\]]+)\|[^\]]+\]', r'\1', text)
+
+    # Remove any remaining braces {stuff}
+    text = re.sub(r'\{[^}]+\}', '', text)
+
+    # Remove extra whitespace
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    text = text.strip()
+
+    return text
+
+
+def unmailify(text):
+    mail_contents = EmailReplyParser.read(text)
+    
+    return mail_contents.fragments[0].content
 
 
 
@@ -118,7 +161,7 @@ class JiraServicedesk():
         ticket["messages"] = [ {
             "id": x.get("id", None),
             "author": x.get("author", {}).get("accountId", None),
-            "text": str.join("", unnest_items(x.get("body", {}), ["text"]))
+            "text": unmailify(strip_jira_wiki_markup(str.join("", unnest_items(x.get("body", {}), ["text"]))))
         } for x in ticket["messages"] ]
 
         #TODO: super ugly sofar

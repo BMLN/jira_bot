@@ -15,6 +15,7 @@ datasets = "*"
 faiss-cpu = "*"
 transformers = "*"
 sentence-transformers = "*"
+email-reply-parser = "*"
 
 [dev-packages]
 

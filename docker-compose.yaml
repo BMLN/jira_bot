@@ -13,8 +13,7 @@ services:
       - API_URL=ollama:11434
       - MODEL_NAME=tinyllama
     depends_on:
-      ollama:
-        condition: service_completed_successfully
+      - ollama
     restart: no
     entrypoint: [ "sh", "-c", 'curl -X POST "$${API_URL}"/api/pull -d "{\"model\": \"$${MODEL_NAME}\"}"' ] 
 
@@ -85,5 +84,8 @@ services:
     environment:
       SKIP_INIT: "false" #"true"
     depends_on:
-      - knowledgebase
-      - ollama
+      knowledgebase:
+        condition: service_started
+      ollama_init:
+        condition: service_completed_successfully
+          

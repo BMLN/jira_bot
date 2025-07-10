@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
     args = args.parse_args()
     args.input = "../mbz_extract/extraction.csv"
-    print(args)
+
 
     if not path.isfile(args.input):
         print("input isnt a file")
@@ -83,8 +83,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
 
-    # try:
-    if True:
+    try:
+
         encoder = OnDemandDPREncoder(args.encoder_model)
 
         c_chunks = estimate_chunks(args.input, args.designated_bytes, load=0.25)
@@ -113,21 +113,26 @@ if __name__ == "__main__":
             for xx in args.text_columns:
                 x = x.explode(xx, ignore_index=True)
             
+    
 
 
-            x = pd.DataFrame(
+            text = x[ args.text_columns ].astype(str).apply(lambda x: str.join(" ", x), axis=1)
+            data = pd.Series(x[ args.data_columns ].to_dict(orient="records") or [ {} ] * len(x))
+            del x
+            
+            data = pd.DataFrame(
                 {
-                    "data": x[ args.data_columns ].to_dict(orient="records") or [ {} ] * len(x),
-                    "text": x[args.text_columns].astype(str).apply(lambda x: str.join(" ", x), axis=1) 
+                    "data": pd.Series.combine(data, text, lambda _x, _y: _x | {"text": _y}),
+                    "embedding": encoder.vectorize(text.tolist())
                 }
             )
-            x["embeddings"] = encoder.vectorize(x["text"].tolist())
-            x.to_json(args.output, mode="a", lines=True, orient="records")
-            del x
-            exit()
+            data.to_json(args.output, mode="a", lines=True, orient="records")
+            del text
+            del data
+            
 
 
-    # except Exception as e:
-    #     print(e)
+    except Exception as e:
+        print(f"Failed: {e}")
 
-    #     sys.exit(1)
+        sys.exit(1)

@@ -26,7 +26,7 @@ class Controller():
         self.ticket_queue = Queue()
         self.update_freq=60
         self.updated = datetime.datetime.now() - datetime.timedelta(days=30)
-        #logger.info(f"setup jira_bot on {servicedesk.project.get("projectName", None)}({servicedesk.jira.jira_url})")
+        logger.info(f"setup jira_bot on {servicedesk.project.get("projectName", None)}({servicedesk.jira.jira_url})")
 
         self.worker = None
 
@@ -36,12 +36,12 @@ class Controller():
 
         changedTickets = self.servicedesk.fetchTickets()
         changedTickets = [ x for x in changedTickets if (datetime.datetime.fromisoformat(x.get("updated", None)).timestamp() or datetime.datetime.now().timestamp()) > self.updated.timestamp() ]
-        
+
         
         for x in changedTickets: 
             self.ticket_queue.put(x)
- 
-            #self.processTicket(x["id"])
+            #self.processTicket(x["key"])
+            
         self.updated = updated
 
         logger.info(f"jira_bot updated at {str(self.updated.strftime("%Y-%m-%d %H:%M"))}")
@@ -59,8 +59,8 @@ class Controller():
                 response = self.chatbot.respond(inquiry) #"here it would invoke a chatrequest" 
 
                 #post response
-                self.servicedesk.postMessageTo(ticket["id"], response, False) #for current testing stage
-                logger.info("jira_bot posted a message to {ticketid}")
+                self.servicedesk.postMessageTo(ticket["id"], "---!AUTOMATED MESSAGE! CURRENTLY IN TESTING! ONLY CONTAINS END-TO-END COURSE DATA!---\n" + response, False) #for current testing stage
+                logger.info(f"jira_bot posted a message to {ticketid}")
 
 
 
