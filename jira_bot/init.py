@@ -15,7 +15,8 @@ from ast import literal_eval
 
 
 
-from logging import getLogger
+from logging import getLogger, basicConfig, INFO
+basicConfig(level=INFO)
 logger = getLogger()
 
 

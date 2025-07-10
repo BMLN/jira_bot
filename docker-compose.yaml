@@ -82,7 +82,7 @@ services:
 
         ENTRYPOINT ["/bin/sh", "init.sh"]
     environment:
-      SKIP_INIT: "true" #"true"
+      SKIP_INIT: "false" #"true"
       JIRA_URL: ${JIRA_URL}
       JIRA_AUTH_EMAIL: ${JIRA_AUTH_EMAIL}
       JIRA_AUTH_TOKEN: ${JIRA_AUTH_TOKEN}
@@ -93,6 +93,8 @@ services:
       CHATBOT_ENCODER_MODEL: ${CHATBOT_ENCODER_MODEL}
       CHATBOT_GENERATOR_MODEL: ${CHATBOT_GENERATOR_MODEL}
       CHATBOT_GENERATOR_ENDPOINT: ${CHATBOT_GENERATOR_ENDPOINT}
+    volumes:
+      - ./data.json:/opt/jira_bot/resources/data.json
     network_mode: "host"
     depends_on:
       knowledgebase:
