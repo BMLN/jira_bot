@@ -53,14 +53,19 @@ class Controller():
 
         if (messages := ticket.get("messages")):   #should always be true however
             if messages[-1]["author"] == ticket["creator"] and messages[-1]["author"] != self.servicedesk.jira.accountId:
-                
+                logger.info(f"jira_bot is processing ticket {ticketid}")
+
                 #create response
                 inquiry = messages[-1]["text"] #last message only? Need testing for best contextwindow
                 response = self.chatbot.respond(inquiry) #"here it would invoke a chatrequest" 
 
                 #post response
                 self.servicedesk.postMessageTo(ticket["id"], "---!AUTOMATED MESSAGE! CURRENTLY IN TESTING! ONLY CONTAINS END-TO-END COURSE DATA!---\n" + response, False) #for current testing stage
+                    
                 logger.info(f"jira_bot posted a message to {ticketid}")
+
+
+
 
 
 
@@ -87,5 +92,9 @@ class Controller():
         ).start()
 
         while True:
-            self.update()
+            try:
+                self.update()
+            except Exception as e:
+                logger.warning(f"jira_bot failed to update at { str(datetime.now().strftime("%Y-%m-%d %H:%M")) }")
+
             sleep(self.update_freq)
